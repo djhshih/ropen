@@ -32,3 +32,10 @@ ropen infile.ext
 `ropen` will read the input file `infile.ext`, assuming that the file format is correctly
 specified by the file extension `ext`. This file extension must be supported by the `io` R package.
 
+
+## Caution
+
+If you run more than one instance of `ropen` within the same directory, do not
+start the second instance before the first instance is finished with
+initialization. Otherwise, the behaviour is undefined.
+

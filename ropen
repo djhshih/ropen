@@ -7,17 +7,42 @@ fi
 
 infile=$1
 
-# prepare for clean up
-if [[ -f .Rprofile ]]; then
-	cp .Rprofile .Rprofile.orig
-	trap "{ mv .Rprofile.orig .Rprofile; }" EXIT
+# setup and clean up
+if [[ -f .Rprofile.ropen ]]; then
+	# another running instance of ropen has created a backup file
+	# use this backup file as the starting point
+	cp .Rprofile.ropen .Rprofile
+	# the other running instance of ropen is responsible for cleaning up this
+	# backup file
+elif [[ -f .Rprofile && ! -f .ropen.running ]]; then
+	# backup initialization script in current directroy
+	cp .Rprofile .Rprofile.ropen
+	# remove backup file upon exit
+	trap "{ mv .Rprofile.ropen .Rprofile; }" EXIT
 else
+	# use initialization script at $HOME, if available
 	if [[ -f ~/.Rprofile ]]; then
 		cp ~/.Rprofile .Rprofile
 	fi
-	trap "{ rm .Rprofile; }" EXIT
+	# signal to other instances so that they do not use the .Rprofile 
+	# created by this instance
+	touch .ropen.running
+	# an initialization script will be created, register it for removal
+	trap "{ rm -f .Rprofile; rm -f .ropen.running; }" EXIT
 fi
 
+# NB  Multiple instances may modify .Rprofile, problems may occur if they
+#     are modifying .Rprofile simultaneously.
+#     Once R is initilized, any temporary .Rprofile is obsolete.
+
+# FIXME  Consider adding a read-write lock to prevent simultaneous editing
+#        to .Rprofile to occur.
+#        Ideally, R would support startup scripts that are passed via the
+#        command line instead of reading from .Rprofile in the current
+#        directory.
+
+# use available initialization script as starting point
+# add startup code
 cat >> .Rprofile << EOF
 library(io, quiet=TRUE);
 x <- qread("$infile");
