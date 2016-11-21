@@ -15,7 +15,7 @@ directory included in the `$PATH` environmental variable, such as `/usr/local/bi
 If you are on Linux, you can also do
 
 ```bash
-curl -L https://github.com/djhshih/ropen/archive/v0.1.tar.gz | \
+curl -L https://github.com/djhshih/ropen/archive/v0.2.tar.gz | \
 	tar -xz --strip-components=1 ropen-*/ropen
 install ropen /usr/local/bin && rm ropen
 ```
