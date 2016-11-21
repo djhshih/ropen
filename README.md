@@ -1,7 +1,7 @@
 # ropen
 
-`ropen` is a command line viewer of data files for R. It will read an input data
-file (with a proper file name extension) into the R environment.
+`ropen` is a command line viewer of data files for R. It reads an input data
+file (with a proper file name extension) into an interactive R session.
 
 ## Requirements
 
