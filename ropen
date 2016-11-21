@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if (( $# < 1 )); then
+	echo "usage: ${0##*/} <infile.ext>" >&2
+	exit 1
+fi
+
+infile=$1
+
+# prepare for clean up
+if [[ -f .Rprofile ]]; then
+	cp .Rprofile .Rprofile.orig
+	trap "{ mv .Rprofile.org .Rprofile; }" EXIT
+else
+	if [[ -f ~/.Rprofile ]]; then
+		cp ~/.Rprofile .Rprofile
+	fi
+	trap "{ rm .Rprofile; }" EXIT
+fi
+
+cat >> .Rprofile << EOF
+library(io, quiet=TRUE);
+x <- qread("$infile");
+message("variable: x");
+message("class: ", class(x));
+message("dimensions: ", paste(dim(x), collapse=", "));
+message("head: ");
+print(x[1:6, ]);
+EOF
+
+R --interactive --quiet
