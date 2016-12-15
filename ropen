@@ -7,43 +7,49 @@ fi
 
 infile=$1
 
+if [[ -f .ropen.lock ]]; then
+	echo "Another ropen instance is initializing. Please wait until it is done."
+	exit 1
+fi
+
+# prevent other instances of `ropen` from running until this instance
+# finishes launching
+touch .ropen.lock
+
+# Expected behaviour:
+# A temporary `.Rprofile` will be created with custom startup scripts.
+# This temporary `.Rprofile` will be based on a `./.Rprofile` or
+# `~/.Rprofile`, if any exists
+# A backup of the original `./.Rprofile` (if any exists) will be created 
+# as `.Rprofile.ropen`.
+# As soon as R finish initialization, the temporary `.Rprofile` will be 
+# deleted; further, if any backup `.Rprofile.ropen` exists, it will be 
+# renamed as `.Rprofile`.
+
 # setup and clean up
-if [[ -f .Rprofile.ropen ]]; then
-	# another running instance of ropen has created a backup file
-	# use this backup file as the starting point
-	cp .Rprofile.ropen .Rprofile
-	# the other running instance of ropen is responsible for cleaning up this
-	# backup file
-elif [[ -f .Rprofile && ! -f .ropen.running ]]; then
+if [[ -f .Rprofile ]]; then
 	# backup initialization script in current directroy
 	cp .Rprofile .Rprofile.ropen
-	# remove backup file upon exit
-	trap "{ mv .Rprofile.ropen .Rprofile; }" EXIT
 else
 	# use initialization script at $HOME, if available
 	if [[ -f ~/.Rprofile ]]; then
 		cp ~/.Rprofile .Rprofile
 	fi
-	# signal to other instances so that they do not use the .Rprofile 
-	# created by this instance
-	touch .ropen.running
-	# an initialization script will be created, register it for removal
-	trap "{ rm -f .Rprofile; rm -f .ropen.running; }" EXIT
 fi
 
 # NB  Multiple instances may modify .Rprofile, problems may occur if they
 #     are modifying .Rprofile simultaneously.
 #     Once R is initilized, any temporary .Rprofile is obsolete.
 
-# FIXME  Consider adding a read-write lock to prevent simultaneous editing
-#        to .Rprofile to occur.
-#        Ideally, R would support startup scripts that are passed via the
-#        command line instead of reading from .Rprofile in the current
-#        directory.
-
 # use available initialization script as starting point
 # add startup code
 cat >> .Rprofile << EOF
+status <- file.remove(".Rprofile");
+if (file.exists(".Rprofile.ropen")) {
+	status <- file.rename(".Rprofile.ropen", ".Rprofile");
+}
+status <- file.remove(".ropen.lock");
+
 library(io, quiet=TRUE);
 x <- qread("$infile");
 message("variable: x");
