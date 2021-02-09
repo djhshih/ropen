@@ -54,9 +54,16 @@ library(io, quiet=TRUE);
 x <- qread("$infile");
 message("variable: x");
 message("class: ", class(x));
-message("dimensions: ", paste(dim(x), collapse=", "));
-message("head: ");
-print(x[1:6, ]);
+
+if (is(x, "matrix") || is(x, "data.frame")) {
+	message("dimensions: ", paste(dim(x), collapse=", "));
+	message("head: ");
+	print(x[1:min(6, nrow(x)), ]);
+} else if (is(x, "list")) {
+	message("structure: ");
+	utils::str(x)
+}
+
 EOF
 
 R --interactive --quiet
